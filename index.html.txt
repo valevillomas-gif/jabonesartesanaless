@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda de Jabones Artesanales</title>
+    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS para el mapa interactivo de envíos por distancia -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 300px; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans">
+
+    <!-- Encabezado -->
+    <header class="bg-purple-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">Esencia Artesanal 🌿</h1>
+            <div id="cart-summary" class="bg-purple-800 px-4 py-2 rounded-lg text-sm font-medium">
+                Carrito: <span id="cart-count">0</span> productos | Total: $<span id="cart-total">0.00</span> MXN
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
+
+        <!-- Sección de Producto Principal (Lavanda) -->
+        <section class="bg-white rounded-2xl shadow-lg p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center border border-purple-100">
+            <div>
+                <img src="https://images.unsplash.com/photo-1608248597359-f55c91a329be?auto=format&fit=crop&w=600&q=80" alt="Jabón Artesanal de Lavanda" class="rounded-xl shadow-md w-full h-80 object-cover">
+            </div>
+            <div class="space-y-4">
+                <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Producto Estrella</span>
+                <h2 class="text-3xl font-bold text-stone-900">Jabón Artesanal de Lavanda</h2>
+                <p class="text-stone-600">Relajante, nutritivo y elaborado con extractos naturales y aceites esenciales ideales para el cuidado de tu piel.</p>
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-stone-700">Selecciona el Tamaño:</label>
+                    <select id="lavender-size" class="w-full border border-stone-300 rounded-lg p-2.5 focus:ring-2 focus:ring-purple-500 focus:outline-none" onchange="updateLavenderPrice()">
+                        <option value="chico" data-price="60">Chico (100g) - $60.00 MXN</option>
+                        <option value="mediano" data-price="100" selected>Mediano (200g) - $100.00 MXN</option>
+                        <option value="grande" data-price="150">Grande (300g) - $150.00 MXN</option>
+                    </select>
+                </div>
+
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-3xl font-extrabold text-purple-900" id="lavender-price-display">$100.00</span>
+                    <span class="text-sm text-stone-500">MXN (Precio base unitario antes de IVA y Mayoreo)</span>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-stone-700">Cantidad (Piezas):</label>
+                    <input type="number" id="lavender-qty" min="1" value="1" class="w-full border border-stone-300 rounded-lg p-2.5 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+
+                <button onclick="addToCart('lavender')" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-3 rounded-lg transition duration-200 shadow-md">
+                    Agregar Jabón de Lavanda al Carrito
+                </button>
+            </div>
+        </section>
+
+        <!-- Tabla de Reglas de Mayoreo y Ahorro -->
+        <section class="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-stone-200">
+            <h3 class="text-xl font-bold text-stone-900 mb-4">📊 Reglas y Tabla de Ahorro por Mayoreo</h3>
+            <p class="text-sm text-stone-600 mb-4">Disfruta de nuestros descuentos escalonados por volumen. El descuento se aplica de manera automática según las piezas que agregues de un mismo producto.</p>
+            <ul class="list-disc list-inside text-sm text-stone-700 mb-6 space-y-1">
+                <li><strong>De 1 a 5 piezas:</strong> Precio regular (Sin descuento).</li>
+                <li><strong>De 6 a 11 piezas:</strong> 10% de descuento por mayoreo.</li>
+                <li><strong>12 piezas o más:</strong> 20% de descuento por mayoreo (Precio Especial).</li>
+            </ul>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-purple-50 text-purple-900 border-b border-purple-200">
+                            <th class="p-3 font-semibold">Tamaño</th>
+                            <th class="p-3 font-semibold">Rango Mayoreo</th>
+                            <th class="p-3 font-semibold">Precio Unitario Original</th>
+                            <th class="p-3 font-semibold">Precio con Descuento</th>
+                            <th class="p-3 font-semibold">Cantidad Ahorrada (Total por bloque)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-200 text-sm">
+                        <tr>
+                            <td class="p-3 font-medium">Chico ($60)</td>
+                            <td class="p-3">6 piezas</td>
+                            <td class="p-3">$360.00</td>
+                            <td class="p-3">$324.00</td>
+                            <td class="p-3 text-green-600 font-semibold">$36.00 MXN</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-medium">Chico ($60)</td>
+                            <td class="p-3">12 piezas</td>
+                            <td class="p-3">$720.00</td>
+                            <td class="p-3">$576.00</td>
+                            <td class="p-3 text-green-600 font-semibold">$144.00 MXN</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-medium">Mediano ($100)</td>
+                            <td class="p-3">6 piezas</td>
+                            <td class="p-3">$600.00</td>
+                            <td class="p-3">$540.00</td>
+                            <td class="p-3 text-green-600 font-semibold">$60.00 MXN</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-medium">Mediano ($100)</td>
+                            <td class="p-3">12 piezas</td>
+                            <td class="p-3">$1,200.00</td>
+                            <td class="p-3">$960.00</td>
+                            <td class="p-3 text-green-600 font-semibold">$240.00 MXN</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-medium">Grande ($150)</td>
+                            <td class="p-3">6 piezas</td>
+                            <td class="p-3">$900.00</td>
+                            <td class="p-3">$810.00</td>
+                            <td class="p-3 text-green-600 font-semibold">$90.00 MXN</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-medium">Grande ($150)</td>
+                            <td class="p-3">12 piezas</td>
+                            <td class="p-3">$1,800.00</td>
+                            <td class="p-3">$1,440.00</td>
+                            <td class="p-3 text-green-600 font-semibold">$360.00 MXN</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Sección de Recomendaciones -->
+        <section class="space-y-6">
+            <h3 class="text-2xl font-bold text-stone-900">✨ Productos Recomendados para Ti</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Recomendación 1: Carbón Activado -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-stone-200 flex flex-col justify-between">
+                    <div>
+                        <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" alt="Jabón de Carbón Activado" class="rounded-lg h-48 w-full object-cover mb-4">
+                        <h4 class="text-xl font-bold text-stone-900">Jabón de Carbón Activado</h4>
+                        <p class="text-sm text-stone-600 mb-4">Desintoxicante y limpiador profundo, ideal para pieles mixtas o grasas. Mismas reglas de tamaños y mayoreo.</p>
+                        
+                        <div class="space-y-3">
+                            <select id="carbon-size" class="w-full border border-stone-300 rounded-lg p-2 text-sm" onchange="updateCarbonPrice()">
+                                <option value="chico" data-price="65">Chico (100g) - $65.00 MXN</option>
+                                <option value="mediano" data-price="110" selected>Mediano (200g) - $110.00 MXN</option>
+                                <option value="grande" data-price="160">Grande (300g) - $160.00 MXN</option>
+                            </select>
+                            <div class="text-lg font-bold text-purple-900" id="carbon-price-display">$110.00 MXN</div>
+                            <input type="number" id="carbon-qty" min="1" value="1" class="w-full border border-stone-300 rounded-lg p-2 text-sm">
+                        </div>
+                    </div>
+                    <button onclick="addToCart('carbon')" class="mt-4 w-full bg-stone-800 hover:bg-stone-900 text-white font-medium py-2.5 rounded-lg transition duration-200 text-sm">
+                        Agregar Carbón Activado
+                    </button>
+                </div>
+
+                <!-- Recomendación 2: Arroz Blanco -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-stone-200 flex flex-col justify-between">
+                    <div>
+                        <img src="https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=500&q=80" alt="Jabón de Arroz Blanco" class="rounded-lg h-48 w-full object-cover mb-4">
+                        <h4 class="text-xl font-bold text-stone-900">Jabón de Arroz Blanco</h4>
+                        <p class="text-sm text-stone-600 mb-4">Aclarante natural, suaviza la piel y ayuda a unificar el tono. Mismas reglas de tamaños y mayoreo.</p>
+                        
+                        <div class="space-y-3">
+                            <select id="rice-size" class="w-full border border-stone-300 rounded-lg p-2 text-sm" onchange="updateRicePrice()">
+                                <option value="chico" data-price="55">Chico (100g) - $55.00 MXN</option>
+                                <option value="mediano" data-price="95" selected>Mediano (200g) - $95.00 MXN</option>
+                                <option value="grande" data-price="140">Grande (300g) - $140.00 MXN</option>
+                            </select>
+                            <div class="text-lg font-bold text-purple-900" id="rice-price-display">$95.00 MXN</div>
+                            <input type="number" id="rice-qty" min="1" value="1" class="w-full border border-stone-300 rounded-lg p-2 text-sm">
+                        </div>
+                    </div>
+                    <button onclick="addToCart('rice')" class="mt-4 w-full bg-stone-800 hover:bg-stone-900 text-white font-medium py-2.5 rounded-lg transition duration-200 text-sm">
+                        Agregar Arroz Blanco
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Sección de Envíos por Distancia con Mapa Interactivo -->
+        <section class="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-stone-200 space-y-4">
+            <h3 class="text-xl font-bold text-stone-900">🗺️ Cálculo de Envío Basado en Distancia</h3>
+            <p class="text-sm text-stone-600">Haz clic en el mapa para fijar tu ubicación de entrega. El sistema calculará la distancia desde nuestro taller y redondeará el costo de envío.</p>
+            <div id="map" class="rounded-xl shadow-inner z-10"></div>
+            <div class="flex flex-col md:flex-row justify-between items-center bg-purple-50 p-4 rounded-xl border border-purple-100 gap-2">
+                <span id="distance-text" class="text-sm text-stone-700 font-medium">Distancia calculada: Selecciona un punto en el mapa</span>
+                <span id="shipping-cost-text" class="text-base font-bold text-purple-900">Costo de Envío Redondo: $0.00 MXN</span>
+            </div>
+        </section>
+
+        <!-- Funciones Extra con Tecnologías Externas -->
+        <section class="grid grid-canvas grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Extra 1: Clima Local y su Sugerencia -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-md p-6 border border-blue-100 space-y-3">
+                <h4 class="text-lg font-bold text-blue-900">🌤️ Extra 1: Sugerencia según el Clima Actual</h4>
+                <p class="text-xs text-blue-700">Integración de API meteorológica externa para recomendarte el tipo de jabón ideal según el clima de hoy.</p>
+                <div id="weather-suggestion" class="text-sm text-stone-700 font-medium bg-white p-3 rounded-lg shadow-sm border border-blue-200">
+                    Consultando clima local...
+                </div>
+            </div>
+
+            <!-- Extra 2: Conversor de Divisas en Tiempo Real -->
+            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-md p-6 border border-emerald-100 space-y-3">
+                <h4 class="text-lg font-bold text-emerald-900">💱 Extra 2: Conversor de Moneda Internacional</h4>
+                <p class="text-xs text-emerald-700">Conversión de tu total a Dólares (USD) o Euros (EUR) usando tasas de cambio en tiempo real.</p>
+                <div class="flex items-center space-x-3 bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                    <select id="currency-select" class="border border-stone-300 rounded p-1 text-sm" onchange="convertCurrency()">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                    </select>
+                    <span id="converted-total" class="text-sm font-bold text-emerald-800">Total convertido: $0.00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Formulario de Checkout y Compra -->
+        <section class="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-stone-200 space-y-6">
+            <h3 class="text-2xl font-bold text-stone-900">💳 Formulario de Pago y Confirmación</h3>
+            <form id="checkout-form" onsubmit="processCheckout(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Nombre Completo (Ficticio)</label>
+                        <input type="text" required placeholder="Ej. Juan Pérez" class="w-full border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Correo Electrónico</label>
+                        <input type="email" required placeholder="correo@ejemplo.com" class="w-full border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Dirección de Entrega</label>
+                    <input type="text" id="input-address" required placeholder="Seleccionada desde el mapa" class="w-full border border-stone-300 rounded-lg p-2.5 text-sm bg-stone-50" readonly>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Número de Tarjeta (Ficticio)</label>
+                        <input type="text" required maxlength="16" placeholder="4532 •••• •••• ••••" class="w-full border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">CVV</label>
+                        <input type="password" required maxlength="4" placeholder="123" class="w-full border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Desglose Final de Importes -->
+                <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 space-y-2 text-sm">
+                    <div class="flex justify-between"><span>Subtotal Productos:</span> <span id="summary-subtotal">$0.00 MXN</span></div>
+                    <div class="flex justify-between"><span>IVA (16%):</span> <span id="summary-iva">$0.00 MXN</span></div>
+                    <div class="flex justify-between"><span>Costo de Envío (Redondo):</span> <span id="summary-shipping">$0.00 MXN</span></div>
+                    <hr class="border-stone-300 my-2">
+                    <div class="flex justify-between text-lg font-bold text-purple-900"><span>Total Final:</span> <span id="summary-total-final">$0.00 MXN</span></div>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition duration-200 shadow-lg text-lg">
+                    Confirmar Compra y Emitir Ticket
+                </button>
+            </form>
+        </section>
+
+        <!-- Sección del Ticket Generado -->
+        <section id="ticket-section" class="hidden bg-white rounded-2xl shadow-xl p-8 border-2 border-dashed border-purple-300 space-y-6">
+            <div class="text-center space-y-2">
+                <h3 class="text-2xl font-bold text-purple-900">🧾 Ticket de Venta Exitosos</h3>
+                <p class="text-xs text-stone-500">Esencia Artesanal - Comprobante Oficial de Compra</p>
+                <p id="ticket-date" class="text-xs text-stone-500"></p>
+            </div>
+            <div id="ticket-content" class="border-t border-b border-stone-200 py-4 space-y-2 text-sm">
+                <!-- Contenido dinámico del ticket -->
+            </div>
+            <div class="text-center">
+                <button onclick="window.print()" class="bg-purple-900 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-purple-800">Imprimir / Guardar Ticket</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Leaflet JS para el mapa -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Precios base actualizados por selects
+        function updateLavenderPrice() {
+            const select = document.getElementById('lavender-size');
+            const price = select.options[select.selectedIndex].getAttribute('data-price');
+            document.getElementById('lavender-price-display').innerText = `$${Number(price).toFixed(2)}`;
+        }
+
+        function updateCarbonPrice() {
+            const select = document.getElementById('carbon-size');
+            const price = select.options[select.selectedIndex].getAttribute('data-price');
+            document.getElementById('carbon-price-display').innerText = `$${Number(price).toFixed(2)} MXN`;
+        }
+
+        function updateRicePrice() {
+            const select = document.getElementById('rice-size');
+            const price = select.options[select.selectedIndex].getAttribute('data-price');
+            document.getElementById('rice-price-display').innerText = `$${Number(price).toFixed(2)} MXN`;
+        }
+
+        // Estado del Carrito
+        let cart = [];
+        let shippingCost = 0.00;
+
+        function calculateItemPrice(basePrice, qty) {
+            let discount = 0;
+            if (qty >= 12) {
+                discount = 0.20; // 20% descuento mayoreo
+            } else if (qty >= 6) {
+                discount = 0.10; // 10% descuento mayoreo
+            }
+            const unitFinalPrice = basePrice * (1 - discount);
+            return unitFinalPrice * qty;
+        }
+
+        function addToCart(type) {
+            let sizeSelect, qtyInput, namePrefix, basePriceKey;
+            
+            if (type === 'lavender') {
+                sizeSelect = document.getElementById('lavender-size');
+                qtyInput = document.getElementById('lavender-qty');
+                namePrefix = 'Jabón de Lavanda';
+            } else if (type === 'carbon') {
+                sizeSelect = document.getElementById('carbon-size');
+                qtyInput = document.getElementById('carbon-qty');
+                namePrefix = 'Jabón de Carbón Activado';
+            } else if (type === 'rice') {
+                sizeSelect = document.getElementById('rice-size');
+                qtyInput = document.getElementById('rice-qty');
+                namePrefix = 'Jabón de Arroz Blanco';
+            }
+
+            const size = sizeSelect.value;
+            const basePrice = Number(sizeSelect.options[sizeSelect.selectedIndex].getAttribute('data-price'));
+            const qty = parseInt(qtyInput.value);
+
+            if (qty <= 0) return alert('Ingresa una cantidad válida');
+
+            const totalItemPrice = calculateItemPrice(basePrice, qty);
+
+            // Buscar si ya existe en el carrito
+            const existingIndex = cart.findIndex(item => item.type === type && item.size === size);
+            if (existingIndex > -1) {
+                cart[existingIndex].qty += qty;
+                cart[existingIndex].totalPrice = calculateItemPrice(basePrice, cart[existingIndex].qty);
+            } else {
+                cart.push({
+                    type: type,
+                    name: `${namePrefix} (${size.toUpperCase()})`,
+                    basePrice: basePrice,
+                    qty: qty,
+                    totalPrice: totalItemPrice
+                });
+            }
+
+            updateCartUI();
+            alert('¡Producto agregado al carrito exitosamente!');
+        }
+
+        function updateCartUI() {
+            let totalCount = 0;
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                totalCount += item.qty;
+                subtotal += item.totalPrice;
+            });
+
+            const iva = subtotal * 0.16;
+            const totalFinal = subtotal + iva + shippingCost;
+
+            document.getElementById('cart-count').innerText = totalCount;
+            document.getElementById('cart-total').innerText = totalFinal.toFixed(2);
+
+            document.getElementById('summary-subtotal').innerText = `$${subtotal.toFixed(2)} MXN`;
+            document.getElementById('summary-iva').innerText = `$${iva.toFixed(2)} MXN`;
+            document.getElementById('summary-shipping').innerText = `$${shippingCost.toFixed(2)} MXN`;
+            document.getElementById('summary-total-final').innerText = `$${totalFinal.toFixed(2)} MXN`;
+
+            convertCurrency();
+        }
+
+        // Mapa Interactivo y Cálculo de Envío por Distancia Redondo
+        const storeCoords = [25.6714, -100.3099]; // Taller Base (Monterrey/Zona Metropolitana)
+        const map = L.map('map').setView(storeCoords, 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let marker = null;
+
+        map.on('click', function(e) {
+            const latlng = e.latlng;
+            if (marker) {
+                marker.setLatLng(latlng);
+            } else {
+                marker = L.marker(latlng).addTo(map);
+            }
+
+            // Calcular distancia en km usando Haversine simple
+            const distanceKm = getDistanceFromLatLonInKm(storeCoords[0], storeCoords[1], latlng.lat, latlng.lng);
+            
+            // Regla de envío: $15 por km, precio redondo (Math.round)
+            let rawShipping = distanceKm * 15;
+            if (rawShipping < 40) rawShipping = 40; // Tarifa mínima de envío
+            shippingCost = Math.round(rawShipping); // Precio redondo requerido
+
+            document.getElementById('distance-text').innerText = `Distancia aproximada: ${distanceKm.toFixed(1)} km`;
+            document.getElementById('shipping-cost-text').innerText = `Costo de Envío Redondo: $${shippingCost}.00 MXN`;
+            document.getElementById('input-address').value = `Lat: ${latlng.lat.toFixed(4)}, Lng: ${latlng.lng.toFixed(4)} (${distanceKm.toFixed(1)} km)`;
+            
+            updateCartUI();
+        });
+
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la tierra en km
+            const dLat = deg2rad(lat2-lat1);
+            const dLon = deg2rad(lon2-lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        // Tecnología Externa 1: API de Clima (Open-Meteo sin clave requerida)
+        async function fetchWeatherSuggestion() {
+            try {
+                // Coordenadas fijas para ejemplo (Monterrey)
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=25.67&longitude=-100.31&current_weather=true');
+                const data = await res.json();
+                const temp = data.current_weather.temperature;
+                
+                let suggestion = `Temperatura actual: ${temp}°C. `;
+                if (temp > 28) {
+                    suggestion += "¡Día caluroso! Te sugerimos altamente el **Jabón de Carbón Activado** para controlar la grasa y refrescar tu piel a profundidad.";
+                } else {
+                    suggestion += "Clima fresco o templado. El **Jabón Artesanal de Lavanda** es perfecto para relajar tu piel e hidratarla.";
+                }
+                document.getElementById('weather-suggestion').innerHTML = suggestion;
+            } catch (error) {
+                document.getElementById('weather-suggestion').innerText = "Clima no disponible temporalmente. Te recomendamos probar nuestra Lavanda relajante.";
+            }
+        }
+        fetchWeatherSuggestion();
+
+        // Tecnología Externa 2: Tasas de Cambio de Divisas en Tiempo Real (API Abierta)
+        let exchangeRates = { USD: 0.058, EUR: 0.053 }; // Valores por defecto de respaldo
+        async function fetchExchangeRates() {
+            try {
+                const res = await fetch('https://open.er-api.com/v6/latest/MXN');
+                const data = await res.json();
+                if(data && data.rates) {
+                    exchangeRates.USD = data.rates.USD;
+                    exchangeRates.EUR = data.rates.EUR;
+                }
+            } catch (e) {
+                console.log("Usando tasas estándar de respaldo");
+            }
+            convertCurrency();
+        }
+
+        function convertCurrency() {
+            const currency = document.getElementById('currency-select').value;
+            let subtotal = 0;
+            cart.forEach(item => subtotal += item.totalPrice);
+            const iva = subtotal * 0.16;
+            const totalFinal = subtotal + iva + shippingCost;
+
+            const rate = exchangeRates[currency] || 0.055;
+            const converted = totalFinal * rate;
+
+            document.getElementById('converted-total').innerText = `Total convertido: $${converted.toFixed(2)} ${currency}`;
+        }
+        fetchExchangeRates();
+
+        // Procesar Compra y Emitir Ticket
+        function processCheckout(event) {
+            event.preventDefault();
+            if (cart.length === 0) {
+                alert('Tu carrito está vacío. Agrega al menos un jabón para continuar.');
+                return;
+            }
+            if (shippingCost === 0 && marker === null) {
+                alert('Por favor selecciona tu ubicación de entrega en el mapa para calcular el costo de envío.');
+                return;
+            }
+
+            let subtotal = 0;
+            let ticketHtml = `<p><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>`;
+            ticketHtml += `<p><strong>Cliente:</strong> Ficticio / Verificado con Tarjeta</p><br>`;
+            ticketHtml += `<p class="font-bold underline">Detalle de Productos:</p>`;
+
+            cart.forEach(item => {
+                subtotal += item.totalPrice;
+                ticketHtml += `<div class="flex justify-between"><span>${item.qty}x ${item.name}</span> <span>$${item.totalPrice.toFixed(2)} MXN</span></div>`;
+            });
+
+            const iva = subtotal * 0.16;
+            const finalTotal = subtotal + iva + shippingCost;
+
+            ticketHtml += `<hr class="my-2 border-stone-200">`;
+            ticketHtml += `<div class="flex justify-between"><span>Subtotal:</span> <span>$${subtotal.toFixed(2)} MXN</span></div>`;
+            ticketHtml += `<div class="flex justify-between"><span>IVA (16%):</span> <span>$${iva.toFixed(2)} MXN</span></div>`;
+            ticketHtml += `<div class="flex justify-between"><span>Envío Redondo:</span> <span>$${shippingCost.toFixed(2)} MXN</span></div>`;
+            ticketHtml += `<div class="flex justify-between font-bold text-base mt-2 text-purple-900"><span>TOTAL PAGADO:</span> <span>$${finalTotal.toFixed(2)} MXN</span></div>`;
+
+            document.getElementById('ticket-date').innerText = `Emitido el ${new Date().toLocaleDateString()}`;
+            document.getElementById('ticket-content').innerHTML = ticketHtml;
+            
+            document.getElementById('ticket-section').classList.remove('hidden');
+            document.getElementById('ticket-section').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
